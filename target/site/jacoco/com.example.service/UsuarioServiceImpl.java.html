@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">usuarios</a> &gt; <a href="index.source.html" class="el_package">com.example.service</a> &gt; <span class="el_source">UsuarioServiceImpl.java</span></div><h1>UsuarioServiceImpl.java</h1><pre class="source lang-java linenums">package com.example.service;
+
+import com.example.model.Response;
+import com.example.model.Usuario;
+import com.example.repository.UsuarioRepository;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service
+<span class="fc" id="L24">public class UsuarioServiceImpl implements UsuarioService {</span>
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+<span class="fc" id="L29">    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();</span>
+
+    @Autowired
+    private Validator validator;
+
+    @Override
+    public ResponseEntity&lt;Response&gt; crearUsuario(Usuario usuario) throws Exception {
+        Response response;
+        try {
+<span class="fc" id="L38">            Set&lt;ConstraintViolation&lt;Usuario&gt;&gt; violations = validator.validate(usuario);</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (!violations.isEmpty()) {</span>
+<span class="fc" id="L41">                StringBuilder errorMessages = new StringBuilder();</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                for (ConstraintViolation&lt;Usuario&gt; violation : violations) {</span>
+<span class="fc" id="L43">                    errorMessages.append(violation.getPropertyPath())</span>
+<span class="fc" id="L44">                            .append(&quot;: &quot;)</span>
+<span class="fc" id="L45">                            .append(violation.getMessage())</span>
+<span class="fc" id="L46">                            .append(&quot;; &quot;);</span>
+<span class="fc" id="L47">                }</span>
+<span class="fc" id="L48">                response = new Response(&quot;error&quot;, null, errorMessages.toString());</span>
+<span class="fc" id="L49">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            }
+<span class="fc" id="L51">            Usuario alreadyExistUser = usuarioRepository.findByCorreo(usuario.getCorreo());</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            if (alreadyExistUser != null) {</span>
+<span class="nc" id="L53">                response = new Response(&quot;error&quot;, null, &quot;El correo ya existe&quot;);</span>
+<span class="nc" id="L54">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            }
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (!isValidPassword(usuario.getContrasena())) {</span>
+<span class="fc" id="L58">                response = new Response(&quot;error&quot;, null,</span>
+                        &quot;La contraseña debe tener entre 8 y 15 caracteres, incluyendo una letra mayúscula, una minúscula, un número y un carácter especial.&quot;);
+<span class="fc" id="L60">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            }
+<span class="fc" id="L62">            usuario.setFechaRegistro(LocalDate.now());</span>
+<span class="fc" id="L63">            usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));</span>
+<span class="fc" id="L64">            Usuario newUser = usuarioRepository.save(usuario);</span>
+<span class="fc" id="L65">            response = new Response(&quot;success&quot;, newUser, &quot;&quot;);</span>
+<span class="fc" id="L66">            return ResponseEntity.status(HttpStatus.OK).body(response);</span>
+<span class="fc" id="L67">        } catch (Exception e) {</span>
+<span class="fc" id="L68">            response = new Response(&quot;error&quot;, null, e.getMessage());</span>
+<span class="fc" id="L69">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);</span>
+        }
+    }
+
+    @Override
+    public ResponseEntity&lt;Response&gt; login(String correo, String contrasena) throws Exception {
+        Response response;
+        try {
+<span class="fc" id="L77">            Usuario usuario = usuarioRepository.findByCorreo(correo);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (usuario == null) {</span>
+<span class="fc" id="L79">                response = new Response(&quot;error&quot;, null, &quot;Usuario no encontrado&quot;);</span>
+<span class="fc" id="L80">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            }
+
+            // Verificar contraseña
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            if (!passwordEncoder.matches(contrasena, usuario.getContrasena())) {</span>
+<span class="fc" id="L85">                response = new Response(&quot;error&quot;, null, &quot;Contraseña incorrecta&quot;);</span>
+<span class="fc" id="L86">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            }
+
+<span class="fc" id="L89">            response = new Response(&quot;success&quot;, usuario, &quot;&quot;);</span>
+<span class="fc" id="L90">            return ResponseEntity.status(HttpStatus.OK).body(response);</span>
+<span class="fc" id="L91">        } catch (Exception e) {</span>
+<span class="fc" id="L92">            response = new Response(&quot;error&quot;, null, e.getMessage());</span>
+<span class="fc" id="L93">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);</span>
+        }
+    }
+
+    @Override
+    public ResponseEntity&lt;Response&gt; actualizarRol(Long idUsuario, String nuevoRol) throws Exception {
+        Response response;
+        try {
+<span class="fc" id="L101">            Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(idUsuario);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            if (!usuarioOpt.isPresent()) {</span>
+<span class="fc" id="L103">                response = new Response(&quot;error&quot;, null, &quot;Usuario no encontrado&quot;);</span>
+<span class="fc" id="L104">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            }
+
+<span class="fc" id="L107">            Usuario usuario = usuarioOpt.get();</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (!isValidRole(nuevoRol)) {</span>
+<span class="fc" id="L109">                response = new Response(&quot;error&quot;, null, &quot;Rol no valido&quot;);</span>
+<span class="fc" id="L110">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            }
+
+<span class="fc" id="L113">            usuario.setRol(nuevoRol);</span>
+<span class="fc" id="L114">            Usuario updatedUser = usuarioRepository.save(usuario);</span>
+<span class="fc" id="L115">            response = new Response(&quot;success&quot;, updatedUser, &quot;&quot;);</span>
+<span class="fc" id="L116">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+<span class="nc" id="L117">        } catch (Exception e) {</span>
+<span class="nc" id="L118">            response = new Response(&quot;error&quot;, null, e.getMessage());</span>
+<span class="nc" id="L119">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);</span>
+        }
+    }
+
+    @Override
+    public ResponseEntity&lt;Response&gt; eliminarUsuario(Long idUsuario) throws Exception {
+        Response response;
+        try {
+<span class="fc" id="L127">            Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(idUsuario);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (!usuarioOpt.isPresent()) {</span>
+<span class="fc" id="L129">                response = new Response(&quot;error&quot;, null, &quot;Usuario no encontrado&quot;);</span>
+<span class="fc" id="L130">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            }
+
+<span class="fc" id="L133">            usuarioRepository.deleteById(idUsuario);</span>
+<span class="fc" id="L134">            response = new Response(&quot;success&quot;, new String(&quot;Usuario eliminado con exito&quot;), &quot;&quot;);</span>
+<span class="fc" id="L135">            return ResponseEntity.status(HttpStatus.OK).body(response);</span>
+<span class="fc" id="L136">        } catch (Exception e) {</span>
+<span class="fc" id="L137">            response = new Response(&quot;error&quot;, null, e.getMessage());</span>
+<span class="fc" id="L138">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);</span>
+        }
+
+    }
+
+    @Override
+    public ResponseEntity&lt;Response&gt; actualizarUsuario(Long id, Usuario updatedUsuario) {
+        Response response;
+        try {
+            // Buscar el usuario por ID
+<span class="fc" id="L148">            Optional&lt;Usuario&gt; optionalUsuario = usuarioRepository.findById(id);</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if (!optionalUsuario.isPresent()) {</span>
+<span class="fc" id="L150">                response = new Response(&quot;error&quot;, null, &quot;Usuario no encontrado&quot;);</span>
+<span class="fc" id="L151">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            }
+<span class="fc" id="L153">            updatedUsuario.setContrasena(optionalUsuario.get().getContrasena());</span>
+<span class="fc" id="L154">            updatedUsuario.setRol(optionalUsuario.get().getRol());</span>
+<span class="fc" id="L155">            Set&lt;ConstraintViolation&lt;Usuario&gt;&gt; violations = validator.validate(updatedUsuario);</span>
+
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (!violations.isEmpty()) {</span>
+<span class="fc" id="L158">                StringBuilder errorMessages = new StringBuilder();</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                for (ConstraintViolation&lt;Usuario&gt; violation : violations) {</span>
+<span class="fc" id="L160">                    errorMessages.append(violation.getPropertyPath())</span>
+<span class="fc" id="L161">                            .append(&quot;: &quot;)</span>
+<span class="fc" id="L162">                            .append(violation.getMessage())</span>
+<span class="fc" id="L163">                            .append(&quot;; &quot;);</span>
+<span class="fc" id="L164">                }</span>
+<span class="fc" id="L165">                response = new Response(&quot;error&quot;, null, errorMessages.toString());</span>
+<span class="fc" id="L166">                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            }
+
+<span class="fc" id="L169">            Usuario usuario = optionalUsuario.get();</span>
+
+            // Actualizar los datos del usuario (sin cambiar el correo ni la contraseña)
+<span class="fc" id="L172">            usuario.setNombre(updatedUsuario.getNombre());</span>
+<span class="fc" id="L173">            usuario.setApellido(updatedUsuario.getApellido());</span>
+<span class="fc" id="L174">            usuario.setDireccion(updatedUsuario.getDireccion());</span>
+<span class="fc" id="L175">            usuario.setTelefono(updatedUsuario.getTelefono());</span>
+
+            // Guardar los cambios en la base de datos
+<span class="fc" id="L178">            Usuario updatedUser = usuarioRepository.save(usuario);</span>
+
+<span class="fc" id="L180">            response = new Response(&quot;success&quot;, updatedUser, &quot;Usuario actualizado exitosamente&quot;);</span>
+<span class="fc" id="L181">            return ResponseEntity.status(HttpStatus.OK).body(response);</span>
+<span class="fc" id="L182">        } catch (Exception e) {</span>
+<span class="fc" id="L183">            response = new Response(&quot;error&quot;, null, e.getMessage());</span>
+<span class="fc" id="L184">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);</span>
+        }
+    }
+
+    @Override
+    public List&lt;Usuario&gt; getAllUsuarios() {
+<span class="nc" id="L190">        return usuarioRepository.findAll();</span>
+    }
+
+    // Funciones de validación
+    public boolean isValidRole(String role) {
+<span class="fc" id="L195">        String lowerCaseRole = role.toLowerCase();</span>
+<span class="fc bfc" id="L196" title="All 4 branches covered.">        return lowerCaseRole.equals(&quot;admin&quot;) || lowerCaseRole.equals(&quot;cliente&quot;);</span>
+    }
+
+    public boolean isValidPassword(String password) {
+<span class="fc" id="L200">        return password.matches(</span>
+                &quot;^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&amp;*()_+\\-=\\[\\]{};':\&quot;\\\\|,.&lt;&gt;\\/?])[A-Za-z\\d!@#$%^&amp;*()_+\\-=\\[\\]{};':\&quot;\\\\|,.&lt;&gt;\\/?]{8,15}$&quot;);
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,1 +1,3 @@
 com\example\AppTest.class
+com\example\controller\UsuarioControllerTest.class
+com\example\service\UsuarioServiceImplTest.class

@@ -16,5 +16,7 @@ public interface UsuarioService {
 
     ResponseEntity<Response> eliminarUsuario(Long idUsuario) throws Exception;
 
+    ResponseEntity<Response> actualizarUsuario(Long id, Usuario updatedUsuario) throws Exception;
+
     List<Usuario> getAllUsuarios();
 }

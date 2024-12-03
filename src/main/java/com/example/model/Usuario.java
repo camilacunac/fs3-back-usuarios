@@ -1,6 +1,11 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 @Entity
@@ -9,28 +14,38 @@ public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_usuario")
     private Long idUsuario;
 
+    @NotBlank(message = "El correo es obligatorio.")
+    @Email(message = "El correo debe tener un formato válido.")
     @Column(name = "correo", nullable = false, unique = true)
     private String correo;
 
+    @NotBlank(message = "La contraseña es obligatoria.")
     @Column(name = "contrasena", nullable = false)
     private String contrasena;
 
+    @NotBlank(message = "El nombre es obligatorio.")
+    @Size(min = 5, message = "El nombre debe tener al menos 5 caracteres.")
     @Column(name = "nombre", nullable = false)
     private String nombre;
 
+    @NotBlank(message = "El apellido es obligatorio.")
+    @Size(min = 5, message = "El apellido debe tener al menos 5 caracteres.")
     @Column(name = "apellido", nullable = false)
     private String apellido;
 
+    @NotBlank(message = "El rol es obligatorio.")
+    @Pattern(regexp = "^(admin|cliente)$", message = "El rol debe ser 'admin' o 'cliente'.")
     @Column(name = "rol", nullable = false)
     private String rol;
 
-    @Column(name = "direccion", nullable = true)
+    @Size(min = 15, message = "La dirección debe tener al menos 15 caracteres.")
+    @Column(name = "direccion")
     private String direccion;
 
-    @Column(name = "telefono", nullable = true)
+    @Pattern(regexp = "\\d{9,}", message = "El teléfono debe contener solo números y tener al menos 9 dígitos.")
+    @Column(name = "telefono")
     private String telefono;
 
     @Column(name = "fecha_registro", nullable = false)

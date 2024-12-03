@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">usuarios</a> &gt; <a href="index.source.html" class="el_package">com.example.controller</a> &gt; <span class="el_source">UsuarioController.java</span></div><h1>UsuarioController.java</h1><pre class="source lang-java linenums">package com.example.controller;
+
+import com.example.model.LoginRequest;
+import com.example.model.Response;
+import com.example.model.Usuario;
+import com.example.service.UsuarioService;
+
+import jakarta.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/usuarios&quot;)
+<span class="fc" id="L18">public class UsuarioController {</span>
+
+    @Autowired
+    private UsuarioService usuarioService;
+
+    // Obtener todos los usuarios
+    @GetMapping
+    public List&lt;Usuario&gt; getAllUsuarios() {
+<span class="fc" id="L26">        return usuarioService.getAllUsuarios();</span>
+    }
+
+    // Crear un nuevo usuario
+    @PostMapping(&quot;/registro&quot;)
+    public ResponseEntity&lt;Response&gt; crearUsuario(@RequestBody @Valid Usuario usuario) {
+        try {
+<span class="fc" id="L33">            return usuarioService.crearUsuario(usuario);</span>
+<span class="fc" id="L34">        } catch (Exception e) {</span>
+<span class="fc" id="L35">            return ResponseEntity.status(500).body(new Response(&quot;error&quot;, null, &quot;Error interno al crear el usuario&quot;));</span>
+        }
+    }
+
+    // Inicio de sesión (Login)
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;Response&gt; login(@RequestBody LoginRequest loginRequest) {
+        try {
+<span class="fc" id="L43">            return usuarioService.login(loginRequest.getCorreo(), loginRequest.getContrasena());</span>
+<span class="fc" id="L44">        } catch (Exception e) {</span>
+<span class="fc" id="L45">            return ResponseEntity.status(500)</span>
+<span class="fc" id="L46">                    .body(new Response(&quot;error&quot;, null, &quot;Error interno durante el inicio de sesión&quot;));</span>
+        }
+    }
+
+    // Actualizar el rol de un usuario
+    @PutMapping(&quot;/{id}/rol&quot;)
+    public ResponseEntity&lt;Response&gt; actualizarRol(@PathVariable Long id, @RequestParam String nuevoRol) {
+        try {
+<span class="fc" id="L54">            return usuarioService.actualizarRol(id, nuevoRol);</span>
+<span class="fc" id="L55">        } catch (Exception e) {</span>
+<span class="fc" id="L56">            return ResponseEntity.status(500).body(new Response(&quot;error&quot;, null, &quot;Error interno al actualizar el rol&quot;));</span>
+        }
+    }
+
+    // Eliminar un usuario
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Response&gt; eliminarUsuario(@PathVariable Long id) {
+        try {
+<span class="fc" id="L64">            return usuarioService.eliminarUsuario(id);</span>
+<span class="fc" id="L65">        } catch (Exception e) {</span>
+<span class="fc" id="L66">            return ResponseEntity.status(500).body(new Response(&quot;error&quot;, null, &quot;Error interno al eliminar el usuario&quot;));</span>
+        }
+    }
+
+    @PutMapping(&quot;/actualizar/{id}&quot;)
+    public ResponseEntity&lt;Response&gt; actualizarUsuario(@PathVariable Long id, @RequestBody Usuario updatedUsuario) {
+        try {
+<span class="fc" id="L73">            return usuarioService.actualizarUsuario(id, updatedUsuario);</span>
+<span class="fc" id="L74">        } catch (Exception e) {</span>
+<span class="fc" id="L75">            return ResponseEntity.status(500)</span>
+<span class="fc" id="L76">                    .body(new Response(&quot;error&quot;, null, &quot;Error interno al actualizar el usuario&quot;));</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

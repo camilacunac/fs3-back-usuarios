@@ -1,8 +1,12 @@
 package com.example.controller;
 
+import com.example.model.LoginRequest;
 import com.example.model.Response;
 import com.example.model.Usuario;
 import com.example.service.UsuarioService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +28,7 @@ public class UsuarioController {
 
     // Crear un nuevo usuario
     @PostMapping("/registro")
-    public ResponseEntity<Response> crearUsuario(@RequestBody Usuario usuario) {
+    public ResponseEntity<Response> crearUsuario(@RequestBody @Valid Usuario usuario) {
         try {
             return usuarioService.crearUsuario(usuario);
         } catch (Exception e) {
@@ -34,9 +38,9 @@ public class UsuarioController {
 
     // Inicio de sesión (Login)
     @PostMapping("/login")
-    public ResponseEntity<Response> login(@RequestParam String correo, @RequestParam String contrasena) {
+    public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) {
         try {
-            return usuarioService.login(correo, contrasena);
+            return usuarioService.login(loginRequest.getCorreo(), loginRequest.getContrasena());
         } catch (Exception e) {
             return ResponseEntity.status(500)
                     .body(new Response("error", null, "Error interno durante el inicio de sesión"));
@@ -62,4 +66,15 @@ public class UsuarioController {
             return ResponseEntity.status(500).body(new Response("error", null, "Error interno al eliminar el usuario"));
         }
     }
+
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<Response> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario updatedUsuario) {
+        try {
+            return usuarioService.actualizarUsuario(id, updatedUsuario);
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new Response("error", null, "Error interno al actualizar el usuario"));
+        }
+    }
+
 }

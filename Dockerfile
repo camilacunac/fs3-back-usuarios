@@ -1,20 +1,24 @@
-# Usar una versión de OpenJDK estable
-FROM openjdk:21-ea-24-oracle
+FROM eclipse-temurin:22-jdk AS buildstage
 
-# Directorio de trabajo dentro del contenedor
+RUN apt-get update && apt-get install -y maven
+
 WORKDIR /app
 
-# Copiar el JAR generado
-COPY target/usuarios-1.0-SNAPSHOT.jar app.jar
-
-# Copiar los archivos del Oracle Wallet
+COPY pom.xml .
+COPY src /app/src
 COPY Wallet_HEALZJHB0K6M53N7 /app/wallet
 
-# Configurar el Oracle Wallet
 ENV TNS_ADMIN=/app/wallet
 
-# Exponer el puerto 8080
+RUN mvn clean package
+
+FROM eclipse-temurin:22-jdk
+
+COPY --from=buildstage /app/target/usuarios-1.0-SNAPSHOT.jar /app/usuarios.jar
+
+COPY Wallet_HEALZJHB0K6M53N7 /app/wallet
+
+ENV TNS_ADMIN=/app/wallet
 EXPOSE 8080
 
-# Comando de inicio
-CMD [ "java", "-jar", "app.jar" ]
+ENTRYPOINT [ "java", "-jar", "/app/usuarios.jar" ]
